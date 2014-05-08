@@ -8,6 +8,12 @@
   # Make sure you include "/webroot" at the end!
   DocumentRoot <%= @path %>/webroot
 
+  <Directory <%= @path %>/webroot>
+    Options Indexes FollowSymLinks
+    AllowOverride All
+    Require all granted
+  </Directory>
+
   RewriteEngine on
   RewriteRule ^/rsrc/(.*)     -                       [L,QSA]
   RewriteRule ^/favicon.ico   -                       [L,QSA]

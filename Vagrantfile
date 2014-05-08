@@ -7,30 +7,39 @@ VAGRANTFILE_API_VERSION = "2"
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   # Every Vagrant virtual environment requires a box to build off of.
-  config.vm.box = "hashicorp/precise64"
+  config.vm.box = "ubuntu/trusty64"
 
   # Create a private network, which allows host-only access to the machine
   # using a specific IP.
   config.vm.network "private_network", ip: "192.168.33.10"
 
-  # config.vm.provider "virtualbox" do |vb|
-  #   # Don't boot with headless mode
-  #   vb.gui = true
-  #
-  #   # Use VBoxManage to customize the VM. For example to change memory:
-  #   vb.customize ["modifyvm", :id, "--memory", "1024"]
-  # end
-  #
+  config.vm.provider "virtualbox" do |vb|
+    # Uncomment to show the vm gui, if you need to debug things
+    # vb.gui = true
 
-  config.vm.provision "puppet" do |puppet|
-    puppet.manifests_path = "puppet"
-    puppet.manifest_file  = "site.pp"
-    puppet.module_path = "puppet/modules"
+    # Uncomment if you want to change the specs on the machine
+    vb.customize ["modifyvm", :id, "--memory", "1024"]
+    vb.customize ["modifyvm", :id, "--cpus", "2"]
   end
 
-  config.vm.provision "puppet" do |puppet2|
-    puppet2.manifests_path = "puppet"
-    puppet2.manifest_file  = "samba.pp"
-    #puppet2.options = "--verbose --debug"
+  config.vm.synced_folder "code", "/opt",
+    type: "rsync",
+    rsync__auto: "true",
+    # We ignore phabricator/bin/* and phd-daemon because symlinks don't work on windows
+    rsync__exclude: [".git/", "phabricator/bin/*", "scripts/daemon/phd-daemon"]
+
+  # Recreate the symlinks we skipped
+  config.vm.provision "puppet" do |puppet|
+    puppet.manifest_file  = "symlinks.pp"
+    puppet.manifests_path = "puppet"
+    puppet.facter = { "path" => "/opt/phabricator"}
+  end
+
+  # Provisioning that sets up the machine to a state for phabricator
+  config.vm.provision "puppet" do |puppet|
+    puppet.manifest_file  = "site.pp"
+    puppet.manifests_path = "puppet"
+    puppet.module_path = "puppet/modules"
+    puppet.facter = { "path" => "/opt/phabricator", "host" => "phabricator.local"}
   end
 end

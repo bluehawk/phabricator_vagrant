@@ -1,16 +1,16 @@
 define phabricator::phabricator(
-    $path="/opt/phabricator",
-    $host="phabricator.local") {
+    $path,
+    $host) {
 
-    file { '/etc/apache2/sites-available/phabricator':
+    file { '/etc/apache2/sites-available/phabricator.conf':
         content => template('phabricator/apacheconf.erb'),
         notify => Service['apache2'],
     }
 
-    file { '/etc/apache2/sites-enabled/phabricator':
-        require => File['/etc/apache2/sites-available/phabricator'],
+    file { '/etc/apache2/sites-enabled/phabricator.conf':
+        require => File['/etc/apache2/sites-available/phabricator.conf'],
         ensure => symlink,
-        target => '/etc/apache2/sites-available/phabricator',
+        target => '/etc/apache2/sites-available/phabricator.conf',
         notify => Service['apache2'],
     }
 
@@ -21,29 +21,19 @@ define phabricator::phabricator(
     }
 
 
-    file { '/opt/sshd_phabricator': ensure => 'directory' }
-    file { '/opt/sshd_phabricator/sshd_config.phabricator':
-        content => template('phabricator/sshd_config.phabricator.erb'),
-    }
-    file { '/opt/sshd_phabricator/phabricator-ssh-hook.sh':
-        content => template('phabricator/phabricator-ssh-hook.sh.erb'),
+    user { 'phd':
+        ensure => "present",
     }
 
     # Install database
     exec { "$path/bin/storage upgrade --force": }
     # Base URI
     exec { "$path/bin/config set phabricator.base-uri 'http://$host/'": }
-    exec { "$path/bin/config set phd.user 'phd'": }
-    exec { "$path/bin/config set diffusion.ssh-user 'git'": }
     # Daemons
-    exec { "$path/bin/phd start": }
+    file { '/var/run/phd': ensure=>'directory', owner=>'phd', group=>'phd', before=>Exec["$path/bin/phd restart"]}
+    file { '/var/log/phd': ensure=>'directory', owner=>'phd', group=>'phd', before=>Exec["$path/bin/phd restart"]}
+    file { "$path/scripts/daemon/phd-daemon": ensure=>'symlink', target=>"launch_daemon.php", before=>Exec["$path/bin/phd restart"]}
+    exec { "$path/bin/config set phd.user 'phd' && $path/bin/config set phd.pid-directory '/var/run/phd' && $path/bin/config set phd.log-directory '/var/log/phd'": before=>Exec["$path/bin/phd restart"]}
+    exec { "$path/bin/phd restart": }
 }
 
-
-
-
-# echo "git ALL=(phd) SETENV: NOPASSWD: /usr/bin/git-upload-pack, /usr/bin/git-receive-pack" > /etc/sudoers
-# LINE ABOVE SHOULD USE visudo, no idea how to automate that.
-#
-#
-#

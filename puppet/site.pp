@@ -1,8 +1,13 @@
+# This manifiest requests two factor variables:
+# path - the path to the Phabricator install
+# host - the hostname of the machine
+
 exec { "apt-get update":
     path => ["/bin", "/usr/bin", "/usr/sbin", ""]
 }
 
-package { ["php5", "mysql-server", "apache2-mpm-prefork", "php5-mysql", "php5-cli", "php5-curl", "php5-ldap", "php5-gd", "php-apc", "git", "libapache2-mod-php5" ]:
+package { ["git", "mysql-server", "apache2-mpm-prefork", "php5", "libapache2-mod-php5",
+           "php5-mysql", "php5-cli", "php5-curl", "php5-ldap", "php5-gd", "php-apc" ]:
     ensure => "installed",
     require => Exec['apt-get update']
 }
@@ -22,23 +27,16 @@ service { 'apache2':
     require => Package['apache2-mpm-prefork'],
 }
 
-file { "/opt":
-    ensure => directory,
-}
-
-exec { "repos":
-    require => [Package["git"], File['/opt']],
-    command => 'git clone git://github.com/facebook/phabricator && git clone git://github.com/facebook/libphutil && git clone git://github.com/facebook/arcanist',
-    creates => '/opt/phabricator',
-    path => ["/bin", "/usr/bin"],
-    cwd => "/opt",
-}
-
-
 phabricator::phabricator { 'local':
-    require => [Exec['repos'],Package['php5-cli', 'mysql-server']],
+    require => [Package['php5-cli', 'mysql-server']],
+    host => $host,
+    path => $path
 }
 
+phabricator::sshd { 'phab_sshd':
+    require => Phabricator::Phabricator['local'],
+    path => $path
+}
 
 # http://snowulf.com/2012/04/05/puppet-quick-tip-enabling-an-apache-module/
 define apache::loadmodule() {
