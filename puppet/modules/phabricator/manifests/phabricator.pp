@@ -20,20 +20,19 @@ define phabricator::phabricator(
         group => 'www-data',
     }
 
-
     user { 'phd':
         ensure => "present",
     }
 
     # Install database
-    exec { "$path/bin/storage upgrade --force": }
+    exec { "$path/bin/storage upgrade --force": before => Exec["$path/bin/phd restart"]}
     # Base URI
-    exec { "$path/bin/config set phabricator.base-uri 'http://$host/'": }
+    exec { "$path/bin/config set phabricator.base-uri 'http://$host/'": before => Exec["$path/bin/phd restart"]}
     # Daemons
     file { '/var/run/phd': ensure=>'directory', owner=>'phd', group=>'phd', before=>Exec["$path/bin/phd restart"]}
     file { '/var/log/phd': ensure=>'directory', owner=>'phd', group=>'phd', before=>Exec["$path/bin/phd restart"]}
     file { "$path/scripts/daemon/phd-daemon": ensure=>'symlink', target=>"launch_daemon.php", before=>Exec["$path/bin/phd restart"]}
     exec { "$path/bin/config set phd.user 'phd' && $path/bin/config set phd.pid-directory '/var/run/phd' && $path/bin/config set phd.log-directory '/var/log/phd'": before=>Exec["$path/bin/phd restart"]}
-    exec { "$path/bin/phd restart": }
+    exec { "$path/bin/phd restart": require=> Service['mysql'] }
 }
 
