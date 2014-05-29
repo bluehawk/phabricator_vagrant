@@ -27,6 +27,12 @@ service { 'apache2':
     require => Package['apache2-mpm-prefork'],
 }
 
+# Without this SSHD returns "Unsafe AuthorizedKeysCommand: bad ownership or modes for directory /opt"
+file { '/opt':
+    owner => 'root',
+    group => 'root'
+}
+
 phabricator::phabricator { 'local':
     require => [Package['php5-cli', 'mysql-server']],
     host => $host,

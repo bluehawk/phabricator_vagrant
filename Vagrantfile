@@ -22,7 +22,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     vb.customize ["modifyvm", :id, "--cpus", "2"]
   end
 
-  config.vm.synced_folder "code", "/opt",
+  config.vm.synced_folder "code", "/opt/code",
     type: "rsync",
     rsync__auto: "true",
     # We ignore phabricator/bin/* and phd-daemon because symlinks don't work on windows
@@ -32,7 +32,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.provision "puppet" do |puppet|
     puppet.manifest_file  = "symlinks.pp"
     puppet.manifests_path = "puppet"
-    puppet.facter = { "path" => "/opt/phabricator"}
+    puppet.facter = { "path" => "/opt/code/phabricator"}
   end
 
   # Provisioning that sets up the machine to a state for phabricator
@@ -40,6 +40,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     puppet.manifest_file  = "site.pp"
     puppet.manifests_path = "puppet"
     puppet.module_path = "puppet/modules"
-    puppet.facter = { "path" => "/opt/phabricator", "host" => "phabricator.local"}
+    puppet.facter = { "path" => "/opt/code/phabricator", "host" => "phabricator.local"}
   end
 end
