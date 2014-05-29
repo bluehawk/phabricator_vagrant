@@ -3,6 +3,8 @@ define phabricator::sshd(
 
     user { 'git':
         ensure => "present",
+        shell => "/bin/bash",
+        password => ''
     }
 
     exec { "$path/bin/config set diffusion.ssh-user 'git'": }
@@ -13,16 +15,22 @@ define phabricator::sshd(
     }
     file { '/opt/sshd_phabricator/phabricator-ssh-hook.sh':
         content => template('phabricator/phabricator-ssh-hook.sh.erb'),
+        mode => '+x'
     }
 
-    # file { '/etc/sudoers.d/phabricator':
-    #     content => "git ALL=(phd) SETENV: NOPASSWD: /usr/bin/git-upload-pack, /usr/bin/git-receive-pack",
-    # }
+    file { '/etc/sudoers.d/phabricator':
+        # For reasons that are beyord my understanding, the newline at the end is incredibly important, and sudo breaks without it.
+        content => "git ALL=(phd) SETENV: NOPASSWD: /usr/bin/git-upload-pack, /usr/bin/git-receive-pack\n",
+        mode => '440',
+    }
 
     package { 'openssh-server':
         ensure => 'installed'
     }
 
+    # service { 'phabricator sshd':
+    #     binary => "/usr/sbin/sshd -f /opt/sshd_phabricator/sshd_config.phabricator"
+    # }
 
 
 }
