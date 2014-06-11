@@ -28,9 +28,9 @@ define phabricator::sshd(
         ensure => 'installed'
     }
 
-    # service { 'phabricator sshd':
-    #     binary => "/usr/sbin/sshd -f /opt/sshd_phabricator/sshd_config.phabricator"
-    # }
-
-
+    service { 'phabricator sshd':
+        binary => "/usr/sbin/sshd -f /opt/sshd_phabricator/sshd_config.phabricator",
+        ensure => "running",
+        provider => "base",
+    }
 }
