@@ -44,7 +44,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       puppet.manifest_file  = "symlinks.pp"
       puppet.manifests_path = "puppet"
       puppet.facter = { "path" => "/opt/code/phabricator"}
-      puppet.options = "--debug --trace"
     end
   else
     puts "Detected *nix, using nfs to sync files (note, I haven't actually tested this)"
