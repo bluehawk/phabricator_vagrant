@@ -41,8 +41,26 @@ service { 'apache2':
     ensure => "running",
     require => Package['apache2-mpm-prefork'],
 }
+
 # XDEBUG
-#file
+file { '/var/log/xdebug.log':
+    mode => "ag+w",
+    ensure => present,
+}
+
+file { '/etc/php5/mods-available/xdebug.ini':
+    content => "zend_extension=xdebug.so
+xdebug.remote_enable=1
+xdebug.remote_handler=dbgp
+xdebug.remote_mode=req
+xdebug.remote_host=192.168.33.1
+xdebug.remote_port=9001
+xdebug.remote_connect_back=1
+xdebug.remote_log=\"/var/log/xdebug.log\"
+",
+    notify => Service['apache2'],
+    require => Package['php5-xdebug']
+}
 
 # Without this SSHD returns "Unsafe AuthorizedKeysCommand: bad ownership or modes for directory /opt"
 file { '/opt':
