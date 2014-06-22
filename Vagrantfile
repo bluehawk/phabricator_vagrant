@@ -37,7 +37,10 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       type: "rsync",
       rsync__auto: "true",
       # We ignore phabricator/bin/* and phd-daemon because symlinks don't work on windows
-      rsync__exclude: [".git/", "phabricator/bin/*", "scripts/daemon/phd-daemon"]
+      rsync__exclude: [".git/", "phabricator/bin/*", "scripts/daemon/phd-daemon" ],
+      rsync__args: ["--verbose", "--archive", "--delete", "-z",
+      # Protect files from being deleted, even if are not in source folder
+      "--filter=P local.json"]
 
     # Recreate the symlinks we skipped
     config.vm.provision "puppet" do |puppet|
