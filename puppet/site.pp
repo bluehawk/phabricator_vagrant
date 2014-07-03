@@ -7,7 +7,8 @@ exec { "apt-get update":
 }
 
 package { ["git", "mysql-server", "apache2-mpm-prefork", "php5", "libapache2-mod-php5",
-           "php5-mysql", "php5-cli", "php5-curl", "php5-ldap", "php5-gd", "php-apc", "php5-xdebug" ]:
+           "php5-mysql", "php5-cli", "php5-curl", "php5-ldap", "php5-gd", "php-apc", "php5-xdebug",
+           "sendmail" ]:
     ensure => "installed",
     require => Exec['apt-get update']
 }
@@ -80,6 +81,18 @@ phabricator::sshd { 'phab_sshd':
     require => Phabricator::Phabricator['local'],
     path => $path
 }
+
+service { 'sendmail':
+    require => Package['sendmail'],
+}
+
+# Hosts file, needed for sendmail to not hang for a minute or so on every email
+file { '/etc/hosts':
+    content => '127.0.0.1 localhost
+127.0.1.1 vagrant-ubuntu-trusty-64.localhost vagrant-ubuntu-trusty-64',
+    notify => Service['sendmail'],
+}
+
 
 
 
